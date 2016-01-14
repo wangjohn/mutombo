@@ -24,6 +24,7 @@ const (
 type StoredRequest struct {
 	RequestId string
 	Response  *http.Response
+	Finished  bool
 }
 
 type Storage interface {

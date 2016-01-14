@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/wangjohn/gowebutils"
+	"github.com/wangjohn/mutombo/storage"
 	"github.com/zenazn/goji/web"
 )
 
@@ -76,7 +76,7 @@ func PostRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		resp, err := makeRequest(data)
-		_, err = StoreResponse(storedRequest.RequestId, resp)
+		_, err = store.StoreResponse(storedRequest.RequestId, resp)
 		if err != nil {
 			log.Printf("Unable to store response: %v", err)
 		}
