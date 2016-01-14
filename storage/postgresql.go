@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"net/http"
+
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -71,7 +73,7 @@ func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) 
 	var finished bool
 	var body []byte
 	var statusCode int
-	err := s.DB.QueryRow(getRequestQuery, &finished, &body, &statusCode).Scan()
+	err := s.DB.QueryRow(getRequestQuery, reqId).Scan(&finished, &body, &statusCode)
 	if err != nil {
 		return nil, err
 	}

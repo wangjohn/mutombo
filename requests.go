@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -26,12 +27,44 @@ type NonBlockingPostResp struct {
 	RequestId string `json:"request_id"`
 }
 
+type RequestProcessingResp struct {
+	Type    string `json:"_type"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 func GetRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 	requestId := c.URLParams["request_id"]
 	if requestId == "" {
 		err := errors.New("You must specify a request_id when retrieving a request")
 		gowebutils.SendError(w, err)
 		return
+	}
+	store, _, err := prepareRequest(r)
+	defer store.Close()
+	if err != nil {
+		gowebutils.SendError(w, err)
+		return
+	}
+	storedReq, err := store.GetRequest(requestId)
+	if err != nil {
+		gowebutils.SendError(w, err)
+		return
+	}
+	if storedReq.Finished {
+		respBytes, err := ioutil.ReadAll(storedReq.Response.Body)
+		if err != nil {
+			gowebutils.SendError(w, err)
+			return
+		}
+		w.Write(respBytes)
+	} else {
+		resp := RequestProcessingResp{
+			Type:    "error",
+			Code:    "request_processing",
+			Message: "Request is currently processing and will complete soon",
+		}
+		json.NewEncoder(w).Encode(resp)
 	}
 }
 
