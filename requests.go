@@ -51,6 +51,10 @@ func GetRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		gowebutils.SendError(w, err)
 		return
 	}
+	if storedReq == nil {
+		gowebutils.SendError(w, fmt.Errorf("Unable to find request with id '%v'", requestId))
+		return
+	}
 	if storedReq.Finished {
 		respBytes, err := ioutil.ReadAll(storedReq.Response.Body)
 		if err != nil {
