@@ -1,0 +1,6 @@
+{
+  "body": {},
+  "url": "http://api.zinc.io/v0/order/3e2a402492b76ee1345fd87279176d7f",
+  "method": "GET",
+  "blocking": false
+}

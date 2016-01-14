@@ -1,17 +1,17 @@
 package storage
 
 import (
-	"bytes"
 	"database/sql"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
 
 const (
 	storeRequestQuery  = `INSERT INTO requests(blocking, method, url) VALUES ($1, $2, $3) returning id;`
-	storeResponseQuery = `UPDATE requests SET body = $1 WHERE id = $2;`
+	storeResponseQuery = `UPDATE requests SET body = $1, finished = 't', status_code = $2 WHERE id = $3;`
 	//storeHeadersQuery = `INSERT INTO headers(request_id, name, value) VALUES ($1, $2, $3);`
 	getRequestQuery = `SELECT finished, body, status_code FROM requests WHERE id = $1;`
 	getHeadersQuery = `SELECT name, value FROM headers WHERE request_id = $1;`
@@ -46,8 +46,11 @@ func (s PostgresStorage) StoreResponse(requestId string, response *http.Response
 	if err != nil {
 		return nil, err
 	}
-	respByteBody := response.Body
-	err = s.DB.QueryRow(storeResponseQuery, respByteBody, reqId).Scan()
+	respByteBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = s.DB.QueryRow(storeResponseQuery, string(respByteBody), response.StatusCode, reqId).Scan()
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +74,16 @@ func (s PostgresStorage) Close() error {
 // Helper function for returning a StoredRequest object for a request
 func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) {
 	var finished bool
-	var body []byte
-	var statusCode int
-	err := s.DB.QueryRow(getRequestQuery, reqId).Scan(&finished, &body, &statusCode)
+	var body string
+	var sc sql.NullInt64
+	err := s.DB.QueryRow(getRequestQuery, reqId).Scan(&finished, &body, &sc)
 	if err != nil {
 		return nil, err
+	}
+
+	statusCode := 0
+	if sc.Valid {
+		statusCode = int(sc.Int64)
 	}
 
 	respHeader, err := s.getHeader(reqId)
@@ -83,7 +91,7 @@ func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) 
 		return nil, err
 	}
 
-	bodyReader := ioutil.NopCloser(bytes.NewReader(body))
+	bodyReader := ioutil.NopCloser(strings.NewReader(body))
 	httpResp := http.Response{
 		StatusCode: statusCode,
 		Header:     *respHeader,

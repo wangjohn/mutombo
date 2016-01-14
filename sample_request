@@ -1,0 +1,34 @@
+#!/usr/bin/python
+#!/usr/local/bin/python
+# makes launching local requests easy
+# usage: request [http_method] [request_resource]
+# example: request post accounts
+# if testing the live version, add argument "live" at the end
+
+import sys, os
+
+class SampleRequest(object):
+    def __init__(self, args):
+        self.args = args
+
+    def command(self):
+        curl_arguments = (self.http_method(), self.file_path(), self.url())
+        command = "curl -X %s -d @%s %s" % curl_arguments
+        print command
+        os.system(command)
+
+    def http_method(self):
+        return self.args[1].upper()
+
+    def file_path(self):
+        file_name = "%s_%s" % (self.args[1].lower(), self.args[2].lower())
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)),
+            "sample_requests", file_name)
+
+    def url(self):
+        base_url = "http://localhost:8000"
+        path = self.args[2].lower()
+        return "%s/%s" % (base_url, path)
+
+if __name__ == '__main__':
+    SampleRequest(sys.argv).command()
