@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/wangjohn/gowebutils"
@@ -11,17 +14,17 @@ import (
 )
 
 type RequestData struct {
-	Body     interface{} `json:"body"`
-	Headers  interface{} `json:"headers"`
-	URL      string      `json:"url"`
-	Method   string      `json:"method"`
-	Blocking bool        `json:"blocking"`
+	Body     interface{}       `json:"body"`
+	Headers  map[string]string `json:"headers"`
+	URL      string            `json:"url"`
+	Method   string            `json:"method"`
+	Blocking bool              `json:"blocking"`
 }
 
 func GetRequest(c web.C, w http.ResponseWriter, r *http.Request) {
-	requestId := c.URlParams["request_id"]
+	requestId := c.URLParams["request_id"]
 	if requestId == "" {
-		err = errors.New("You must specify a request_id when retrieving a request")
+		err := errors.New("You must specify a request_id when retrieving a request")
 		gowebutils.SendError(w, err)
 		return
 	}
@@ -51,7 +54,12 @@ func PostRequest(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(h, resp.Header.Get(h))
 	}
 
-	w.Write(resp.Body)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		gowebutils.SendError(w, err)
+		return
+	}
+	w.Write(byteBody)
 }
 
 // Makes the actual HTTP request and returns a response and/or error.
@@ -68,15 +76,14 @@ func makeRequest(data RequestData) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	httpReq := http.NewRequest(data.Method, data.URL, body)
+	bodyReader := bytes.NewReader(body)
+	httpReq, err := http.NewRequest(method, data.URL, bodyReader)
+	if err != nil {
+		return nil, err
+	}
 
-	for headerName, headerVal := range data.Headers {
-		switch hv := headerVal.(type) {
-		case string:
-			httpReq.Header.Add(headerName, hv)
-		default:
-			return nil, fmt.Errorf("Invalid header value for '%v'. Header values must be strings", headerName)
-		}
+	for name, val := range data.Headers {
+		httpReq.Header.Add(name, val)
 	}
 
 	client := &http.Client{
