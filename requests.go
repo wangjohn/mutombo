@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -19,6 +20,10 @@ type RequestData struct {
 	URL      string            `json:"url"`
 	Method   string            `json:"method"`
 	Blocking bool              `json:"blocking"`
+}
+
+type NonBlockingPostResp struct {
+	RequestId string `json:"request_id"`
 }
 
 func GetRequest(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -49,17 +54,40 @@ func PostRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := makeRequest(data)
-	for h, _ := range resp.Header {
-		w.Header().Set(h, resp.Header.Get(h))
-	}
-
-	byteBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		gowebutils.SendError(w, err)
+	if data.Blocking {
+		// Blocking request
+		gowebutils.SendError(w, fmt.Errorf("Blocking requests are currently unsupported"))
 		return
+	} else {
+		// Non-blocking request
+		storedRequest, err := store.StoreRequest(data.Blocking, data.Method, data.URL)
+		if err != nil {
+			gowebutils.SendError(w, err)
+			return
+		}
+		if storedRequest == nil {
+			gowebutils.SendError(w, fmt.Errorf("Unable to store non-blocking request"))
+			return
+		}
+		err = respondToPost(w, storedRequest)
+		if err != nil {
+			gowebutils.SendError(w, err)
+			return
+		}
+
+		resp, err := makeRequest(data)
+		_, err = StoreResponse(storedRequest.RequestId, resp)
+		if err != nil {
+			log.Printf("Unable to store response: %v", err)
+		}
 	}
-	w.Write(byteBody)
+}
+
+func respondToPost(w http.ResponseWriter, storedRequest *storage.StoredRequest) error {
+	resp := NonBlockingPostResp{
+		RequestId: storedRequest.RequestId,
+	}
+	return json.NewEncoder(w).Encode(resp)
 }
 
 // Makes the actual HTTP request and returns a response and/or error.

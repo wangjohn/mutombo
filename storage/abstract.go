@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 )
 
@@ -20,7 +21,15 @@ const (
 	postgresSSLMode    = "disable"
 )
 
+type StoredRequest struct {
+	RequestId string
+	Response  *http.Response
+}
+
 type Storage interface {
+	StoreRequest(blocking bool, method, url string) (*StoredRequest, error)
+	StoreResponse(requestId string, response *http.Response) (*StoredRequest, error)
+	GetRequest(requestId string) (*StoredRequest, error)
 	Close() error
 }
 
