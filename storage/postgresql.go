@@ -50,12 +50,12 @@ func (s PostgresStorage) StoreResponse(requestId string, response *http.Response
 	if err != nil {
 		return nil, err
 	}
-	err = s.DB.QueryRow(storeResponseQuery, string(respByteBody), response.StatusCode, reqId).Scan()
+	_, err = s.DB.Exec(storeResponseQuery, string(respByteBody), response.StatusCode, reqId)
 	if err != nil {
 		return nil, err
 	}
 	// TODO(wangjohn): Store headers
-	return s.getStoredRequest(reqId)
+	return nil, nil
 }
 
 // Returns the current state of a stored request from the requestId

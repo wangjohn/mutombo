@@ -107,20 +107,29 @@ func PostRequest(w http.ResponseWriter, r *http.Request) {
 			gowebutils.SendError(w, err)
 			return
 		}
-
-		resp, err := makeRequest(data)
-		_, err = store.StoreResponse(storedRequest.RequestId, resp)
-		if err != nil {
-			log.Printf("Unable to store response: %v", err)
-		}
+		go makeAndStoreRequest(storedRequest.RequestId, data)
 	}
 }
 
+// Responds to the post request with a request id
 func respondToPost(w http.ResponseWriter, storedRequest *storage.StoredRequest) error {
 	resp := NonBlockingPostResp{
 		RequestId: storedRequest.RequestId,
 	}
 	return json.NewEncoder(w).Encode(resp)
+}
+
+// Makes a request and stores the result. Logs any errors.
+func makeAndStoreRequest(requestId string, data RequestData) {
+	store, err := storage.GenerateStorage(storage.Postgres)
+	if err != nil {
+		log.Printf("[Store Request][Error] Unable to open storage: %v", err)
+	}
+	resp, err := makeRequest(data)
+	_, err = store.StoreResponse(requestId, resp)
+	if err != nil {
+		log.Printf("[Store Request][Error] Unable to store response: %v", err)
+	}
 }
 
 // Makes the actual HTTP request and returns a response and/or error.
