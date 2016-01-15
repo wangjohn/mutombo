@@ -23,7 +23,7 @@ type RequestData struct {
 	Blocking bool              `json:"blocking"`
 }
 
-type NonBlockingPostResp struct {
+type RequestIdResp struct {
 	RequestId string `json:"request_id"`
 }
 
@@ -95,32 +95,39 @@ func PostRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.Blocking {
-		// Blocking request
-		gowebutils.SendError(w, fmt.Errorf("Blocking requests are currently unsupported"))
-		return
+		completeBlockingRequest(data, w)
 	} else {
-		// Non-blocking request
-		storedRequest, err := store.StoreRequest(data.Blocking, data.Method, data.URL)
-		if err != nil {
-			gowebutils.SendError(w, err)
-			return
-		}
-		if storedRequest == nil {
-			gowebutils.SendError(w, fmt.Errorf("Unable to store non-blocking request"))
-			return
-		}
-		err = respondToPost(w, storedRequest)
-		if err != nil {
-			gowebutils.SendError(w, err)
-			return
-		}
-		go makeAndStoreRequest(storedRequest.RequestId, data)
+		completeNonBlockingRequest(data, w, store)
 	}
+}
+
+// Completes everything needed to make a request a blocking request
+func completeBlockingRequest(data RequestData, w http.ResponseWriter) {
+	gowebutils.SendError(w, fmt.Errorf("Blocking requests are currently unsupported"))
+}
+
+// Completes everything needed to make a request a non-blocking request
+func completeNonBlockingRequest(data RequestData, w http.ResponseWriter, store storage.Storage) {
+	storedRequest, err := store.StoreRequest(data.Blocking, data.Method, data.URL)
+	if err != nil {
+		gowebutils.SendError(w, err)
+		return
+	}
+	if storedRequest == nil {
+		gowebutils.SendError(w, fmt.Errorf("Unable to store non-blocking request"))
+		return
+	}
+	err = respondToPost(w, storedRequest)
+	if err != nil {
+		gowebutils.SendError(w, err)
+		return
+	}
+	go makeAndStoreRequest(storedRequest.RequestId, data)
 }
 
 // Responds to the post request with a request id
 func respondToPost(w http.ResponseWriter, storedRequest *storage.StoredRequest) error {
-	resp := NonBlockingPostResp{
+	resp := RequestIdResp{
 		RequestId: storedRequest.RequestId,
 	}
 	return json.NewEncoder(w).Encode(resp)
