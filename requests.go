@@ -140,6 +140,7 @@ func makeAndStoreRequest(requestId string, data RequestData) {
 		log.Printf("[Store Request][Error] Unable to open storage: %v", err)
 	}
 	resp, err := makeRequest(data)
+	log.Printf("Received response. request_id=%v", requestId)
 	_, err = store.StoreResponse(requestId, resp)
 	if err != nil {
 		log.Printf("[Store Request][Error] Unable to store response: %v", err)
