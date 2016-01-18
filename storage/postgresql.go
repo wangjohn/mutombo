@@ -89,6 +89,9 @@ func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) 
 	var body string
 	var sc sql.NullInt64
 	err := s.DB.QueryRow(getRequestQuery, reqId).Scan(&finished, &body, &sc)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
