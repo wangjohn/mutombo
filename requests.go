@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -177,8 +178,12 @@ func makeRequest(data RequestData) (*http.Response, error) {
 		httpReq.Header.Add(name, val)
 	}
 
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	client := &http.Client{
-		Timeout: time.Duration(maxClientTimeoutMinutes) * time.Minute,
+		Timeout:   time.Duration(maxClientTimeoutMinutes) * time.Minute,
+		Transport: transport,
 	}
 	return client.Do(httpReq)
 }
