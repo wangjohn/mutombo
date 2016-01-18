@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -47,6 +48,8 @@ func (s PostgresStorage) StoreResponse(requestId string, response *http.Response
 		return nil, err
 	}
 	respByteBody, err := ioutil.ReadAll(response.Body)
+	log.printf("Stored response body: %v", respByteBody)
+	defer response.Body.Close()
 	if err != nil {
 		return nil, err
 	}
