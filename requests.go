@@ -133,16 +133,17 @@ func respondToPost(w http.ResponseWriter, storedRequest *storage.StoredRequest) 
 
 // Makes a request and stores the result. Logs any errors.
 func makeAndStoreRequest(requestId string, data RequestData) {
-	store, err := storage.GenerateStorage(storage.Postgres)
-	if err != nil {
-		log.Printf("[Store Request][Error] Unable to open storage: %v", err)
-		return
-	}
 	resp, err := makeRequest(data)
 	if err != nil {
 		log.Printf("[Store Request][Error] Unable to make request: %v", err)
 		return
 	}
+	store, err := storage.GenerateStorage(storage.Postgres)
+	if err != nil {
+		log.Printf("[Store Request][Error] Unable to open storage: %v", err)
+		return
+	}
+	defer store.Close()
 	log.Printf("Received response. request_id=%v status=%v", requestId, resp.Status)
 	_, err = store.StoreResponse(requestId, resp)
 	if err != nil {
