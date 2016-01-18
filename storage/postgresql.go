@@ -13,9 +13,7 @@ import (
 const (
 	storeRequestQuery  = `INSERT INTO requests(blocking, method, url) VALUES ($1, $2, $3) returning id;`
 	storeResponseQuery = `UPDATE requests SET body = $1, finished = 't', status_code = $2 WHERE id = $3;`
-	storeHeadersQuery  = `INSERT INTO headers(request_id, name, value) VALUES ($1, $2, $3);`
 	getRequestQuery    = `SELECT finished, body, status_code FROM requests WHERE id = $1;`
-	getHeadersQuery    = `SELECT name, value FROM headers WHERE request_id = $1;`
 )
 
 type PostgresStorage struct {
@@ -57,17 +55,6 @@ func (s PostgresStorage) StoreResponse(requestId string, response *http.Response
 	_, err = s.DB.Exec(storeResponseQuery, string(respByteBody), response.StatusCode, reqId)
 	if err != nil {
 		return nil, err
-	}
-	// Store headers to the request id
-	stmt, err := s.DB.Prepare(storeHeadersQuery)
-	if err != nil {
-		return nil, err
-	}
-	for k, _ := range response.Header {
-		_, err = stmt.Exec(reqId, k, response.Header.Get(k))
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return nil, nil
@@ -132,18 +119,6 @@ func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) 
 
 // Helper function for getting the stored header object for a request
 func (s PostgresStorage) getHeader(reqId string) (*http.Header, error) {
-	rows, err := s.DB.Query(getHeadersQuery, reqId)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 	header := http.Header{}
-	for rows.Next() {
-		var name, value string
-		if err := rows.Scan(&name, &value); err != nil {
-			return nil, err
-		}
-		header.Set(name, value)
-	}
 	return &header, nil
 }

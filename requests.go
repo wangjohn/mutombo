@@ -62,9 +62,6 @@ func GetRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 			gowebutils.SendError(w, err)
 			return
 		}
-		for k, _ := range storedReq.Response.Header {
-			w.Header().Set(k, storedReq.Response.Header.Get(k))
-		}
 		w.Write(respBytes)
 	} else {
 		resp := RequestProcessingResp{
