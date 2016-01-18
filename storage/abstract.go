@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 )
@@ -41,6 +42,7 @@ func GenerateStorage(name StorageName) (Storage, error) {
 			postgresPassword := os.Getenv("POSTGRES_PASSWORD")
 			dbInfo = fmt.Sprintf("host=%v user=%s password=%s dbname=%s sslmode=%s",
 				postgresHost, postgresUser, postgresPassword, postgresDBName, postgresSSLMode)
+			log.Printf(dbInfo)
 		} else {
 			dbInfo = fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s",
 				postgresHost, postgresUser, postgresDBName, postgresSSLMode)
