@@ -138,12 +138,18 @@ func makeAndStoreRequest(requestId string, data RequestData) {
 	store, err := storage.GenerateStorage(storage.Postgres)
 	if err != nil {
 		log.Printf("[Store Request][Error] Unable to open storage: %v", err)
+		return
 	}
 	resp, err := makeRequest(data)
-	log.Printf("Received response. request_id=%v", requestId)
+	if err != nil {
+		log.Printf("[Store Request][Error] Unable to make request: %v", err)
+		return
+	}
+	log.Printf("Received response. request_id=%v response=%v", requestId, resp)
 	_, err = store.StoreResponse(requestId, resp)
 	if err != nil {
 		log.Printf("[Store Request][Error] Unable to store response: %v", err)
+		return
 	}
 }
 
