@@ -146,7 +146,7 @@ func makeAndStoreRequest(requestId string, data RequestData) {
 		log.Printf("[Store Request][Error] Unable to make request: %v", err)
 		return
 	}
-	log.Printf("Received response. request_id=%v response=%v", requestId, resp)
+	log.Printf("Received response. request_id=%v status=%v", requestId, resp.Status)
 	_, err = store.StoreResponse(requestId, resp)
 	if err != nil {
 		log.Printf("[Store Request][Error] Unable to store response: %v", err)

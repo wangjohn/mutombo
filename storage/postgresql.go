@@ -48,7 +48,7 @@ func (s PostgresStorage) StoreResponse(requestId string, response *http.Response
 		return nil, err
 	}
 	respByteBody, err := ioutil.ReadAll(response.Body)
-	log.Printf("Stored response body: %v", respByteBody)
+	log.Printf("Stored response body request_id=%v", requestId)
 	defer response.Body.Close()
 	if err != nil {
 		return nil, err
