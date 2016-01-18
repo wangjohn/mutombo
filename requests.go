@@ -185,5 +185,6 @@ func makeRequest(data RequestData) (*http.Response, error) {
 		Timeout:   time.Duration(maxClientTimeoutMinutes) * time.Minute,
 		Transport: transport,
 	}
+	log.Printf("Making request method=%v, URL=%v", method, data.URL)
 	return client.Do(httpReq)
 }
