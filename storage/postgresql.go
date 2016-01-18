@@ -89,7 +89,7 @@ func (s PostgresStorage) Close() error {
 // Helper function for returning a StoredRequest object for a request
 func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) {
 	var finished bool
-	var body string
+	var body sql.NullString
 	var sc sql.NullInt64
 	err := s.DB.QueryRow(getRequestQuery, reqId).Scan(&finished, &body, &sc)
 	if err == sql.ErrNoRows {
@@ -109,7 +109,13 @@ func (s PostgresStorage) getStoredRequest(reqId string) (*StoredRequest, error) 
 		return nil, err
 	}
 
-	bodyReader := ioutil.NopCloser(strings.NewReader(body))
+	var bodyString string
+	if body.Valid {
+		bodyString = body.String
+	} else {
+		bodyString = ""
+	}
+	bodyReader := ioutil.NopCloser(strings.NewReader(bodyString))
 	httpResp := http.Response{
 		StatusCode: statusCode,
 		Header:     *respHeader,
