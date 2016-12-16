@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
@@ -11,7 +12,11 @@ import (
 	"github.com/zenazn/goji/web"
 )
 
+var postgresPassword = ""
+
 func main() {
+	flag.StringVar(&postgresPassword, "postgres_password", "", "The password for the postgres db")
+	flag.Parse()
 	goji.Get("/requests/:request_id", GetRequest)
 	goji.Post("/requests", PostRequest)
 	goji.Use(CORSHandler())
@@ -19,7 +24,7 @@ func main() {
 }
 
 func prepareRequest(r *http.Request) (storage.Storage, []byte, error) {
-	store, err := storage.GenerateStorage(storage.Postgres)
+	store, err := storage.GenerateStorage(storage.Postgres, postgresPassword)
 	if err != nil {
 		return store, nil, err
 	}

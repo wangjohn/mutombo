@@ -138,7 +138,7 @@ func makeAndStoreRequest(requestId string, data RequestData) {
 		log.Printf("[Store Request][Error] Unable to make request: %v", err)
 		return
 	}
-	store, err := storage.GenerateStorage(storage.Postgres)
+	store, err := storage.GenerateStorage(storage.Postgres, postgresPassword)
 	if err != nil {
 		log.Printf("[Store Request][Error] Unable to open storage: %v", err)
 		return

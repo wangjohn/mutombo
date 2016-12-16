@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"os"
 )
 
 type StorageName int
@@ -34,11 +33,10 @@ type Storage interface {
 	Close() error
 }
 
-func GenerateStorage(name StorageName) (Storage, error) {
+func GenerateStorage(name StorageName, postgresPassword string) (Storage, error) {
 	if name == Postgres {
 		var dbInfo string
-		if os.Getenv("ENVIRONMENT") == "PROD" {
-			postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+		if postgresPassword != "" {
 			dbInfo = fmt.Sprintf("host=%v user=%s password=%s dbname=%s sslmode=%s",
 				postgresHost, postgresUser, postgresPassword, postgresDBName, postgresSSLMode)
 		} else {
